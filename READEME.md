@@ -2,10 +2,10 @@
 Wadu - 娃读，是一个将pdf转成有声阅读页面的web应用
 
 ## 背景
-想法源自于娃的老师会给一些英语pdf书让我们配娃一起读，我们打工狗也没那么多时间陪读，另外有时候自己的发音也不准确，所以想做一个这样的应用，让娃自己读，同时也能听到相对标准的发音。
-功能比较简单，开发时间比较短，代码也比较粗糙，欢迎大家一起来完善，哈哈
+事情的起因是我家娃的老师会给一些英语pdf让我们陪娃一起读，我们打工狗也没那么多时间，另外自己的发音有时候也不准确，所以想做这样一个的应用，让娃自己读，同时也能听到相对标准的发音。
+功能比较简单，代码写的比仓促，欢迎大家一起来完善，哈哈
 
-## 展示
+## 功能展示
 
 图书列表  
 ![](docs/image1.png)
@@ -87,6 +87,15 @@ page: 本页书的页码，没有就返回0
 2. 命令行上传pdf
 * 解决本地有openai环境，但是服务端没有的情况  
 `./wadu upload --server=http://localhost:8081 xx.pdf `
+
+## Q&A
+1. 为什么要用OpenAI的图理解模型，不直接用OCR？  
+OpenAI的图理解模型可以更好的理解图片，提取出图片中的文字，而OCR只能识别图片中的文字，对于一些复杂的图片，OpenAI的图理解模型更有优势  
+2. 运行报错`panic: cannot load library: libmupdf.so: cannot open shared object file: No such file or directory`  
+需要安装mupdf动态库(github.com/gen2brain/go-fitz使用了)
+	```shell
+	sudo apt install mupdf mupdf-tools
+	```
 
 ## TODO
 - [ ] 支持Ollama等本地模型
