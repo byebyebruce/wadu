@@ -1,0 +1,16 @@
+.vscode
+.idea
+.DS_Store
+
+/bin
+/audio
+/assets
+
+.env
+testdata
+
+*.jpeg
+*.wav
+*.png
+*.db
+*.bolt

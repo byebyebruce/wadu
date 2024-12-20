@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload PDF</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 600px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #007bff;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+        }
+
+        .upload-button, .generate-button {
+            background-color: #28a745;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .upload-button[disabled], .generate-button[disabled] {
+            background-color: #ccc;
+        }
+
+        .upload-button:hover:not([disabled]), .generate-button:hover:not([disabled]) {
+            background-color: #218838;
+        }
+
+        .loading {
+            display: none;
+            font-size: 16px;
+            color: #007bff;
+            margin-top: 10px;
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Upload PDF</h1>
+    <div class="container">
+        <form id="upload-form" action="/api/book/upload" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="pdf">Select PDF File:</label>
+                <input type="file" id="pdf" name="doc" accept=".pdf" required>
+            </div>
+            <div class="form-group">
+                <button type="button" id="generate-button" class="generate-button">生成</button>
+                <button type="submit" id="submit-button" class="upload-button" disabled>提交</button>
+            </div>
+            <div id="loading" class="loading">Uploading...</div>
+            <div id="results"></div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const submitButton = document.getElementById('submit-button');
+            const generateButton = document.getElementById('generate-button');
+            const form = document.getElementById('upload-form');
+            const pdfInput = document.getElementById('pdf');
+            const loadingElement = document.getElementById('loading');
+            const resultsContainer = document.getElementById('results');
+            let rawBook = null;
+
+            function setLoading(isLoading) {
+                if (isLoading) {
+                    loadingElement.style.display = 'block';
+                } else {
+                    loadingElement.style.display = 'none';
+                }
+            }
+
+            generateButton.addEventListener('click', function () {
+                generateButton.disabled = true;
+                setLoading(true);
+                const formData = new FormData();
+                formData.append('doc', pdfInput.files[0]);
+
+                fetch('/api/book/gen', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.json())
+                  .then(data => {
+                      rawBook = data;
+                      displayRawBook(rawBook);
+                      generateButton.disabled = false;
+                      submitButton.disabled = false;
+                      setLoading(false);
+                  }).catch(error => {
+                      console.error('Error:', error);
+                      alert('Error: ' + error.message);
+                      generateButton.disabled = false;
+                      setLoading(false);
+                  });
+            });
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                if (!rawBook) {
+                    alert('请先生成 RawBook');
+                    return;
+                }
+
+                submitButton.disabled = true;
+                setLoading(true);
+                fetch('/api/book/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(rawBook)
+                }).then(response => {
+                    setLoading(false);
+                    return response.json().then(body => ({ status: response.status, body }));
+                }).then(result => {
+                    if (result.status === 200) {
+                        alert('Upload successful');
+                        window.location.href = '/';
+                    } else {
+                        alert('Error: ' + result.body);
+                    }
+                    submitButton.disabled = false;
+                }).catch(error => {
+                    setLoading(false);
+                    console.error('Error:', error);
+                    alert('Error: ' + error.message);
+                    submitButton.disabled = false;
+                });
+            });
+
+            function displayRawBook(book) {
+                resultsContainer.innerHTML = '';
+                const titleElement = document.createElement('h2');
+                titleElement.textContent = book.title;
+                resultsContainer.appendChild(titleElement);
+
+                book.pages.forEach((page, index) => {
+                    const pageElement = document.createElement('div');
+                    pageElement.style.marginBottom = '20px';
+
+                    const imageElement = document.createElement('img');
+                    imageElement.src = 'data:image/jpeg;base64,' + page.raw_image;
+                    imageElement.style.width = '100%';
+                    imageElement.style.border = '1px solid #ddd';
+                    imageElement.style.borderRadius = '8px';
+                    imageElement.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+
+                    const sentencesElement = document.createElement('ul');
+                    if (page.sentences) {
+                        page.sentences.forEach(sentence => {
+                            const sentenceItem = document.createElement('li');
+                            sentenceItem.textContent = sentence;
+                            sentencesElement.appendChild(sentenceItem);
+                        });
+                    }
+
+                    pageElement.appendChild(imageElement);
+                    pageElement.appendChild(sentencesElement);
+                    resultsContainer.appendChild(pageElement);
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

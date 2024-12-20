@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Read Book</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-bar {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 1000;
+        }
+
+        .status-bar .back-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        .status-bar .title {
+            flex: 1;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        .container {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            margin-bottom: 20px;
+            margin-top: 70px; /* Offset for fixed status bar */
+        }
+
+        h1 {
+            color: #007bff;
+        }
+
+        .page {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #fff;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .page img {
+            max-width: 40%;
+            height: auto;
+            display: block;
+            margin-right: 10px;
+        }
+
+        .content-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 60%;
+        }
+
+        .sentence {
+            margin-bottom: 2px; /* Further reduced margin */
+            padding: 0px 2px; /* Further reduced padding */
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .content-box .sentence {
+            margin-bottom: 2px; /* Further reduced margin */
+            padding: 0px 2px; /* Further reduced padding */
+            background-color: #f9f9f9; /* Keep the background color for better readability */
+            border-radius: 5px; /* Keep the border-radius for better aesthetics */
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .sentence.text-only {
+            cursor: default;
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .sentence .icon {
+            margin-right: 5px;
+            font-size: 1em; /* Reduced size of icon */
+        }
+
+        .sentence.playing {
+            background-color: #e3f2fd;
+        }
+
+        .content {
+            font-size: 1em; /* Increased font size */
+            line-height: 1.2em; /* Reduced line spacing */
+        }
+
+        .collapsible {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+            width: 100%;
+            text-align: left;
+            border: none;
+            outline: none;
+            font-size: 1.2em;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            margin-top: 70px; /* Offset for fixed status bar */
+        }
+
+        .collapsible:hover {
+            background-color: #0056b3;
+        }
+
+        .content-box {
+            padding: 10px;
+            display: block; /* Ensure content box is expanded by default */
+            overflow: hidden;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1.2em; /* Increase the font size */
+            line-height: 1.5em; /* Adjust line spacing */
+            width: 90%; /* Align width with container */
+            max-width: 800px; /* Align max-width with container */
+        }
+
+        @media (min-width: 600px) {
+            .container {
+                width: 80%;
+                max-width: 800px;
+            }
+
+            .content {
+                font-size: 1.1em; /* Adjust font size */
+            }
+
+            .content-box {
+                font-size: 1.3em; /* Adjust font size */
+                line-height: 1.6em; /* Adjust line spacing */
+            }
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                width: 75%;
+            }
+
+            .content {
+                font-size: 1.2em; /* Adjust font size */
+            }
+
+            .content-box {
+                font-size: 1.4em; /* Adjust font size */
+                line-height: 1.8em; /* Adjust line spacing */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="status-bar">
+        <button class="back-button" onclick="location.href='/'">⟵ Back</button>
+        <div class="title" id="article-title">Read Article</div>
+        <div class="back-button"></div> <!-- Placeholder to keep title centered -->
+    </div>
+    <button class="collapsible active">Hide All Sentences</button>
+    <div class="content-box" id="full-text-box" style="display: block;"></div>
+    <div id="article-container" class="container">
+        <!-- Pages will be dynamically injected here by JavaScript -->
+    </div>
+
+    <script>
+        const articleId = new URLSearchParams(window.location.search).get('id');
+        let currentAudio = null;
+        let currentSentence = null;
+
+        async function loadArticle() {
+            try {
+                const response = await fetch(`/api/book/${articleId}`);
+                if (!response.ok) {
+                   	throw new Error('Network response was not ok ' + response.statusText);
+                }
+                const article = await response.json();
+                if (!article.pages) {
+                	throw new Error('Article pages not defined');
+                }
+                document.getElementById('article-title').textContent = article.title;
+                displayArticle(article);
+                console.log('Article loaded:', article);
+            } catch (error) {
+                console.error('Error fetching article:', error);
+            }
+        }
+
+        function createSentenceElement(sentenceData, isTextOnly = false) {
+            const sentenceContainer = document.createElement('div');
+            sentenceContainer.classList.add('sentence');
+            if (isTextOnly) {
+                sentenceContainer.classList.add('text-only');
+            }
+
+            const sentenceContent = document.createElement('p');
+            sentenceContent.classList.add('content');
+            sentenceContent.textContent = sentenceData.content;
+
+            if (!isTextOnly && sentenceData.audio_url) {
+                const hornIcon = document.createElement('span');
+                hornIcon.classList.add('icon');
+                hornIcon.innerHTML = '&#x1F50A;'; // Unicode for speaker icon
+
+                const audio = document.createElement('audio');
+                audio.src = "/assets/" + sentenceData.audio_url;
+
+                sentenceContainer.appendChild(hornIcon);
+                sentenceContainer.appendChild(sentenceContent);
+
+                sentenceContainer.addEventListener('click', () => {
+                    if (currentAudio && currentAudio !== audio) {
+                        currentAudio.pause();
+                        currentAudio.currentTime = 0;
+                        currentSentence.classList.remove('playing');
+                    }
+                    if (currentAudio === audio && !audio.paused) {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        sentenceContainer.classList.remove('playing');
+                        currentAudio = null;
+                        currentSentence = null;
+                    } else {
+                        audio.play();
+                        sentenceContainer.classList.add('playing');
+                        currentAudio = audio;
+                        currentSentence = sentenceContainer;
+                    }
+                });
+
+                audio.addEventListener('ended', () => {
+                    sentenceContainer.classList.remove('playing');
+                    currentAudio = null;
+                    currentSentence = null;
+                });
+            } else {
+                sentenceContainer.appendChild(sentenceContent);
+            }
+
+            return sentenceContainer;
+        }
+
+        function displayArticle(article) {
+            const container = document.getElementById('article-container');
+            container.innerHTML = '';
+            const fullTextBox = document.getElementById('full-text-box');
+            fullTextBox.innerHTML = '';
+
+            article.pages.forEach(page => {
+                const pageElement = document.createElement('div');
+                pageElement.classList.add('page');
+
+                if (page.image_url) {
+                    const img = document.createElement('img');
+                    img.src = "/assets/" + page.image_url;
+                    img.alt = 'Image';
+                    pageElement.appendChild(img);
+                }
+
+                const contentContainer = document.createElement('div');
+                contentContainer.classList.add('content-container');
+
+                if (page.sentences) {
+                    page.sentences.forEach(sentenceData => {
+                        const sentenceElementPage = createSentenceElement(sentenceData, true);
+                        contentContainer.appendChild(sentenceElementPage);
+
+                        const sentenceElementFull = createSentenceElement(sentenceData, false);
+                        fullTextBox.appendChild(sentenceElementFull);
+                    });
+                }
+
+                pageElement.appendChild(contentContainer);
+                container.appendChild(pageElement);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadArticle);
+
+        const coll = document.querySelector(".collapsible");
+        const contentBox = document.querySelector(".content-box");
+
+        coll.addEventListener("click", function () {
+            this.classList.toggle("active");
+            if (contentBox.style.display === "block") {
+                contentBox.style.display = "none";
+                this.textContent = "Show All Sentences"; 
+            } else {
+                contentBox.style.display = "block";
+                this.textContent = "Hide All Sentences";
+            }
+        });
+    </script>
+</body>
+
+</html>
