@@ -113,9 +113,27 @@
         .upload-button:hover {
             background-color: #218838;
         }
+
+        .no-books {
+            text-align: center;
+            font-size: 1.2em;
+            color: #555;
+            margin-top: 20px;
+        }
+
+        .admin-link {
+            font-size: 1.2em;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .admin-link:hover {
+            color: #0056b3;
+        }
     </style>
 </head>
 <body>
+    <h1>图书列表</h1>
     <script>
         let isAdmin = false;
         const urlParams = new URLSearchParams(window.location.search);
@@ -129,7 +147,9 @@
     <div id="articles">
         <!-- Articles will be inserted here -->
     </div>
-
+    <div id="no-books" class="no-books" style="display: none;">
+        当前没有图书。<a href="/?admin" class="admin-link">请到管理页面进行上传</a>
+    </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (isAdmin) {
@@ -139,75 +159,83 @@
                 .then(response => response.json())
                 .then(data => {
                     const articlesContainer = document.getElementById('articles');
+                    const noBooksContainer = document.getElementById('no-books');
                     articlesContainer.innerHTML = '';
 
-                    data.forEach(article => {
-                        const articleElement = document.createElement('div');
-                        articleElement.className = 'article';
-						articleElement.addEventListener('click', () => {
-                            const url = `/read?id=${article.id}`;
-                            window.open(url, '_self');
-                        });
-
-                        // Title
-                        const titleElement = document.createElement('h2');
-                        titleElement.textContent = article.title;
-
-                        // Cover Image
-                        const coverImageElement = document.createElement('img');
-                        coverImageElement.className = 'cover-image';
-                        coverImageElement.src = "/assets/"+article.cover_url;
-
-                        // Publish Date
-                        const publishDateElement = document.createElement('div');
-                        publishDateElement.className = 'publish-date';
-                        const publishDate = new Date(article.publish_at * 1000);
-                        publishDateElement.textContent = `发布时间: ${publishDate.toLocaleString()}`;
-
-                        // Content
-                        const contentElement = document.createElement('div');
-                        contentElement.className = 'content';
-                        contentElement.textContent = article.content;
-
-                        // Total Pages
-                        const totalPageElement = document.createElement('div');
-                        totalPageElement.className = 'total-page';
-                        totalPageElement.textContent = `页数: ${article.total_page}`;
-
-                        // Append all elements to the article
-                        articleElement.appendChild(titleElement);
-                        articleElement.appendChild(coverImageElement);
-                        articleElement.appendChild(publishDateElement);
-                        articleElement.appendChild(contentElement);
-                        articleElement.appendChild(totalPageElement);
-
-                        // Admin Delete Button
-                        if (isAdmin) {
-                            const deleteButton = document.createElement('button');
-                            deleteButton.className = 'delete-button';
-                            deleteButton.textContent = '删除';
-                            deleteButton.addEventListener('click', (event) => {
-								event.stopPropagation(); // Prevent the click from propagating to the parent div
-                                if (confirm('Are you sure you want to delete this article?')) {
-                                    fetch(`/api/book/delete/${article.id}`, { method: 'DELETE' })
-                                        .then(response => response.json())
-                                        .then(result => {
-                                            if (result.success) {
-                                                location.reload();
-                                            } else {
-                                                alert('Error deleting article.');
-                                            }
-                                        })
-                                        .catch(error => console.error('Error:', error));
-                                }
+                    if (data.length === 0) {
+                        if (!isAdmin) {
+                            noBooksContainer.style.display = 'block';
+                        }
+                    } else {
+                        noBooksContainer.style.display = 'none';
+                        data.forEach(article => {
+                            const articleElement = document.createElement('div');
+                            articleElement.className = 'article';
+                            articleElement.addEventListener('click', () => {
+                                const url = `/read?id=${article.id}`;
+                                window.open(url, '_self');
                             });
 
-                            articleElement.appendChild(deleteButton);
-                        }
+                            // Title
+                            const titleElement = document.createElement('h2');
+                            titleElement.textContent = article.title;
 
-                        // Append the article to the articles container
-                        articlesContainer.appendChild(articleElement);
-                    });
+                            // Cover Image
+                            const coverImageElement = document.createElement('img');
+                            coverImageElement.className = 'cover-image';
+                            coverImageElement.src = "/assets/"+article.cover_url;
+
+                            // Publish Date
+                            const publishDateElement = document.createElement('div');
+                            publishDateElement.className = 'publish-date';
+                            const publishDate = new Date(article.publish_at * 1000);
+                            publishDateElement.textContent = `发布时间: ${publishDate.toLocaleString()}`;
+
+                            // Content
+                            const contentElement = document.createElement('div');
+                            contentElement.className = 'content';
+                            contentElement.textContent = article.content;
+
+                            // Total Pages
+                            const totalPageElement = document.createElement('div');
+                            totalPageElement.className = 'total-page';
+                            totalPageElement.textContent = `页数: ${article.total_page}`;
+
+                            // Append all elements to the article
+                            articleElement.appendChild(titleElement);
+                            articleElement.appendChild(coverImageElement);
+                            articleElement.appendChild(publishDateElement);
+                            articleElement.appendChild(contentElement);
+                            articleElement.appendChild(totalPageElement);
+
+                            // Admin Delete Button
+                            if (isAdmin) {
+                                const deleteButton = document.createElement('button');
+                                deleteButton.className = 'delete-button';
+                                deleteButton.textContent = '删除';
+                                deleteButton.addEventListener('click', (event) => {
+                                    event.stopPropagation(); // Prevent the click from propagating to the parent div
+                                    if (confirm('Are you sure you want to delete this article?')) {
+                                        fetch(`/api/book/delete/${article.id}`, { method: 'DELETE' })
+                                            .then(response => response.json())
+                                            .then(result => {
+                                                if (result.success) {
+                                                    location.reload();
+                                                } else {
+                                                    alert('Error deleting article.');
+                                                }
+                                            })
+                                            .catch(error => console.error('Error:', error));
+                                    }
+                                });
+
+                                articleElement.appendChild(deleteButton);
+                            }
+
+                            // Append the article to the articles container
+                            articlesContainer.appendChild(articleElement);
+                        });
+                    }
                 })
                 .catch(error => console.error('Error:', error));
         });
