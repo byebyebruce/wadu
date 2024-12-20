@@ -1,12 +1,17 @@
 package server
 
 import (
+	"embed"
+	"html/template"
 	"net/http"
 
 	"github.com/byebyebruce/wadu/internal/biz"
 
 	"github.com/gin-gonic/gin"
 )
+
+//go:embed static/*
+var htmlFS embed.FS
 
 const (
 	APIPathCreateBook = "/api/book/create"
@@ -24,10 +29,18 @@ func NewServer(b *biz.Biz, assets string) *Server {
 	}
 }
 
-func (w *Server) Run(addr string) error {
+func (w *Server) Run(addr string, debug bool) error {
 	r := gin.Default()
 	r.Static("/assets", w.assets)
-	r.LoadHTMLGlob("internal/server/static/*.html")
+
+	// static
+	if debug {
+		r.LoadHTMLGlob("internal/server/static/*.html")
+	} else {
+		tmpl := template.Must(template.ParseFS(htmlFS, "static/*.html"))
+		r.SetHTMLTemplate(tmpl)
+	}
+
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(200, "index.html", gin.H{})
 	})
@@ -43,7 +56,7 @@ func (w *Server) Run(addr string) error {
 	r.GET("/api/book/:id", w.GetBook)
 	r.DELETE("/api/book/delete/:id", w.DeleteBook)
 	r.POST("/api/book/gen", w.GenBook)
-	r.POST("/api/book/create", w.CreateFromRawBook)
+	r.POST(APIPathCreateBook, w.CreateFromRawBook)
 
 	return r.Run(addr)
 }

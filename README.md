@@ -91,14 +91,12 @@ page: 本页书的页码，没有就返回0
 ## Q&A
 1. 为什么要用OpenAI的图理解模型，不直接用OCR？  
 OpenAI的图理解模型可以更好的理解图片，提取出图片中的文字，而OCR只能识别图片中的文字，对于一些复杂的图片，OpenAI的图理解模型更有优势  
-2. 运行报错`panic: cannot load library: libmupdf.so: cannot open shared object file: No such file or directory`  
-需要安装mupdf动态库(github.com/gen2brain/go-fitz使用了)
-	```shell
-	sudo apt install mupdf mupdf-tools
-	```
+2. `CGO_ENABLED=0 go build -o bin .` 编译的启动时会报错`panic: cannot load library: libmupdf.so: cannot open shared object file: No such file or directory`  
+github.com/gen2brain/go-fitz使用了mupdf库
 
 ## TODO
 - [ ] 支持Ollama等本地模型
 - [ ] 支持更多语音合成服务
 - [ ] 支持上传URL
 - [ ] 支持上传时修正句子
+- [ ] 书目录分页

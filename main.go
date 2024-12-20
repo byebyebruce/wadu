@@ -39,6 +39,7 @@ func serverCMD() *cobra.Command {
 		db         = cmd.Flags().String("db", "db.bolt", "db file")
 		assets     = cmd.Flags().String("assets", "assets", "assets folder path")
 		promptFile = cmd.Flags().String("prompt", "", "vlm prompt file")
+		debug      = cmd.Flags().Bool("debug", false, "debug mode")
 	)
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		openaiCli, err := vlm.NewClientFromEnv()
@@ -69,7 +70,7 @@ func serverCMD() *cobra.Command {
 		}
 		b := biz.NewBiz(d, openaiCli, tts, *assets)
 		w := server.NewServer(b, *assets)
-		err = w.Run(*addr)
+		err = w.Run(*addr, *debug)
 		if err != nil {
 			return err
 		}

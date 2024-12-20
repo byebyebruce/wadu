@@ -6,11 +6,12 @@
 /audio
 /assets
 
-.env
-testdata
 
 *.jpeg
 *.wav
 *.png
 *.db
 *.bolt
+*__debug_bin*
+
+.env
