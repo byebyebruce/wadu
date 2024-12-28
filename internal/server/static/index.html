@@ -16,7 +16,7 @@
         #articles {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 10px; /* Reduced gap */
         }
 
         .article {
@@ -24,12 +24,12 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            flex: 0 1 calc(33% - 20px);
+            padding: 10px; /* Reduced padding */
+            flex: 0 1 calc(20% - 10px); /* Adjusted width to fit 5 per row */
             box-sizing: border-box;
             transition: transform 0.2s;
             position: relative;
-            cursor: pointer; /* Added cursor pointer to show clickability */
+            cursor: pointer;
         }
 
         .article:hover {
@@ -38,7 +38,7 @@
 
         .article h2 {
             color: #007bff;
-            margin: 0 0 10px;
+            margin: 0 0 5px; /* Reduced margin */
             transition: color 0.2s;
         }
 
@@ -53,23 +53,23 @@
         }
 
         .content {
-            margin-top: 10px;
+            margin-top: 5px; /* Reduced margin-top */
             font-size: 1em;
             color: #666;
         }
         
         .cover-image {
-            width: 30%; /* Reduced to 30% of original size */
+            width: 30%;
             height: auto;
             display: block;
-            margin: 10px auto;
+            margin: 5px auto; /* Reduced margin */
         }
 
         .total-page {
             font-style: italic;
             font-size: 0.9em;
             color: #555;
-            margin-top: 10px;
+            margin-top: 5px; /* Reduced margin-top */
         }
 
         .delete-button {
@@ -94,7 +94,7 @@
 
         .upload-button-container {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px; /* Reduced margin-bottom */
         }
 
         .upload-button {
