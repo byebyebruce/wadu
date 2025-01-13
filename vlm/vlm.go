@@ -11,6 +11,7 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+// ChatImage 视觉理解
 func ChatImage(ctx context.Context, cli *openai.Client, model string, prompt string, image []byte, jsonFormat bool) (string, error) {
 	if imagex.IsPNG(image) {
 		var err error
@@ -48,8 +49,10 @@ func ChatImage(ctx context.Context, cli *openai.Client, model string, prompt str
 	return ret, nil
 }
 
+// 最大重试次数
 const maxRetry = 3
 
+// ChatImageJSON 视觉理解返回json
 func ChatImageJSON[T any](ctx context.Context, cli *openai.Client, model string, prompt string, image []byte) (*T, error) {
 	for i := 0; i < maxRetry; i++ {
 		str, err := ChatImage(ctx, cli, model, prompt, image, true)

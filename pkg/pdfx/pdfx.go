@@ -10,6 +10,7 @@ import (
 	"github.com/gen2brain/go-fitz"
 )
 
+// ConvertPDFFileToJPEG 将PDF文件转换为JPEG图像
 func ConvertPDFFileToJPEG(f string) ([][]byte, error) {
 	in, err := os.Open(f)
 	if err != nil {
@@ -19,6 +20,7 @@ func ConvertPDFFileToJPEG(f string) ([][]byte, error) {
 	return ConvertPDFToJPEGWithQuality(in, 100)
 }
 
+// ConvertPDFToJPEG 将PDF reader转换为JPEG图像
 func ConvertPDFToJPEG(in io.Reader) ([][]byte, error) {
 	return ConvertPDFToJPEGWithQuality(in, 100)
 }

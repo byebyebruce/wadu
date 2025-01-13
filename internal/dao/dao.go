@@ -38,6 +38,7 @@ func New(f string) (*Dao, error) {
 	return d, nil
 }
 
+// NextID 生成下一个ID
 func (d *Dao) NextID() (uint64, error) {
 	var (
 		id  uint64
@@ -90,6 +91,7 @@ func set[T any](tx *bolt.Tx, bucket string, key string, data T) error {
 	return b.Put([]byte(key), bs)
 }
 
+/*
 func list[T any](tx *bolt.Tx, bucket string) ([]T, error) {
 	var as []T
 	b := tx.Bucket([]byte(bucket))
@@ -105,4 +107,68 @@ func list[T any](tx *bolt.Tx, bucket string) ([]T, error) {
 		as = append(as, a)
 	}
 	return as, nil
+}
+*/
+
+func listForward[T any](tx *bolt.Tx, bucket string, from int, count int) (as []T, total int, err error) {
+	b := tx.Bucket([]byte(bucket))
+	if b == nil {
+		return nil, 0, fmt.Errorf("bucket not found")
+	}
+	total = b.Stats().KeyN
+	var (
+		idx = 0
+		c   = b.Cursor()
+	)
+
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if count > 0 {
+			if len(as) >= count {
+				break
+			}
+		}
+		if idx < from {
+			idx++
+			continue
+		}
+		idx++
+
+		var a T
+		if err = json.Unmarshal(v, &a); err != nil {
+			return
+		}
+		as = append(as, a)
+	}
+	return
+}
+func listBackward[T any](tx *bolt.Tx, bucket string, from int, count int) (as []T, total int, err error) {
+	b := tx.Bucket([]byte(bucket))
+	if b == nil {
+		return nil, 0, fmt.Errorf("bucket not found")
+	}
+	total = b.Stats().KeyN
+	var (
+		idx = 0
+		c   = b.Cursor()
+	)
+
+	for k, v := c.Last(); k != nil; k, v = c.Prev() {
+		if count > 0 {
+			if len(as) >= count {
+				break
+			}
+		}
+		if idx < from {
+			idx++
+			continue
+		}
+		idx++
+
+		var a T
+		if err = json.Unmarshal(v, &a); err != nil {
+			return
+		}
+		as = append(as, a)
+	}
+	return
 }

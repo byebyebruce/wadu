@@ -11,6 +11,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+// CreateBook 创建书
 func (d *Dao) CreateBook(a *model.Book) error {
 	d.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(BookBucket))
@@ -33,13 +34,15 @@ func (d *Dao) CreateBook(a *model.Book) error {
 	return nil
 }
 
-func (d *Dao) ListBook() ([]model.Book, error) {
+// ListBook 列出书
+func (d *Dao) ListBook(from, count int) ([]model.Book, int, error) {
 	var (
-		as  []model.Book
-		err error
+		as    []model.Book
+		err   error
+		total int
 	)
 	d.db.View(func(tx *bolt.Tx) error {
-		as, err = list[model.Book](tx, string(BookBucket))
+		as, total, err = listBackward[model.Book](tx, string(BookBucket), from, count)
 		b := tx.Bucket([]byte(BookBucket))
 		if b == nil {
 			return fmt.Errorf("bucket not found")
@@ -47,14 +50,15 @@ func (d *Dao) ListBook() ([]model.Book, error) {
 		return err
 	})
 	if err != nil {
-		return nil, err
+		return nil, total, err
 	}
 	sort.Slice(as, func(i, j int) bool {
 		return as[i].PublishAt > as[j].PublishAt
 	})
-	return as, nil
+	return as, total, nil
 }
 
+// GetBook 获取书
 func (d *Dao) GetBook(id string) (*model.Book, error) {
 	var (
 		a   *model.Book
@@ -68,6 +72,7 @@ func (d *Dao) GetBook(id string) (*model.Book, error) {
 	return a, err
 }
 
+// DeleteBook 删除书
 func (d *Dao) DeleteBook(id string) error {
 	return d.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(BookBucket))

@@ -18,6 +18,7 @@ import (
 //go:embed prompt.txt
 var Prompt string
 
+// BookPage 书页
 type BookPage struct {
 	Title     string   `json:"title"`
 	Page      int      `json:"page"`
@@ -28,6 +29,7 @@ func genPageInfo(ctx context.Context, openaiCli *openai.Client, vlmModel string,
 	return vlm.ChatImageJSON[BookPage](ctx, openaiCli, vlmModel, Prompt, img)
 }
 
+// GenFromPDF 从PDF生成 model.RawBook
 func GenFromPDF(ctx context.Context, openaiCli *openai.Client, vlmModel string, pdf io.Reader) (*model.RawBook, error) {
 	imgs, err := pdfx.ConvertPDFToJPEGWithQuality(pdf, 10)
 	if err != nil {
@@ -39,7 +41,7 @@ func GenFromPDF(ctx context.Context, openaiCli *openai.Client, vlmModel string, 
 	}
 
 	eg, egCtx := errgroup.WithContext(ctx)
-	eg.SetLimit(3)
+	eg.SetLimit(3) // 限制并发数
 
 	book := &model.RawBook{
 		Pages: make([]model.RawPage, len(imgs)),
