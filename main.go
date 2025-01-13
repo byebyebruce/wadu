@@ -84,9 +84,7 @@ func uploadCMD() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "upload",
 	}
-	var (
-		server = cmd.Flags().String("server", "http://localhost:8081", "server address")
-	)
+	server := cmd.Flags().String("server", "http://localhost:8081", "server address")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		openaiCli, err := vlm.NewClientFromEnv()
 		if err != nil {
@@ -115,10 +113,12 @@ func uploadCMD() *cobra.Command {
 			fmt.Println()
 		}
 		fmt.Println("输入回车上传")
-		//用户输入回车
+		// 用户输入回车
 		fmt.Scanln()
 
-		err = client.PostRawBook(ctx, *server, b)
+		uploadCtx, uploadCancel := context.WithTimeout(context.Background(), time.Minute*10)
+		defer uploadCancel()
+		err = client.PostRawBook(uploadCtx, *server, b)
 		if err != nil {
 			return err
 		}
