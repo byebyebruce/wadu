@@ -45,6 +45,16 @@ cd wadu
 go run .
 ```
 
+## Docker
+### 构建
+```shell
+docker build -t wadu .
+```
+### 运行
+```shell
+docker run -it -v $(pwd)/.env:/app/.env -v $(pwd)/data:/data -p 8081:8081 wadu
+```
+
 ## 使用说明
 ### 说明
 - 偷懒没有做鉴权系统，http://localhost:8081?admin 为管理员页面，可以上传pdf和删除书. http://localhost:8081 为普通用户页面
@@ -96,3 +106,4 @@ github.com/gen2brain/go-fitz使用了mupdf库
 - [ ] 支持上传URL
 - [ ] 支持上传时修正句子
 - [ ] 书目录分页
+- [x] Docker

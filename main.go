@@ -12,6 +12,7 @@ import (
 	"github.com/byebyebruce/wadu/internal/dao"
 	"github.com/byebyebruce/wadu/internal/server"
 	"github.com/byebyebruce/wadu/pdfbook"
+	"github.com/byebyebruce/wadu/pkg/pdfx"
 	"github.com/byebyebruce/wadu/tts/volcanotts"
 	"github.com/byebyebruce/wadu/vlm"
 
@@ -26,6 +27,7 @@ func main() {
 	rootCMD.AddCommand(
 		uploadCMD(),
 		promptCMD(),
+		pdf2imgCMD(),
 	)
 	if err := rootCMD.Execute(); err != nil {
 		panic(err)
@@ -135,6 +137,31 @@ func promptCMD() *cobra.Command {
 	}
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		fmt.Println(pdfbook.Prompt)
+		return nil
+	}
+	return &cmd
+}
+
+func pdf2imgCMD() *cobra.Command {
+	cmd := cobra.Command{
+		Use: "pdf2img",
+	}
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		imgs, err := pdfx.ConvertPDFFileToJPEG(args[0])
+		if err != nil {
+			panic(err)
+		}
+		for i, img := range imgs {
+			f, err := os.Create(fmt.Sprintf("img-%d.jpg", i))
+			if err != nil {
+				panic(err)
+			}
+			defer f.Close()
+			_, err = f.Write(img)
+			if err != nil {
+				panic(err)
+			}
+		}
 		return nil
 	}
 	return &cmd

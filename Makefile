@@ -2,6 +2,10 @@ build:
 	mkdir -p bin
 	go build -o bin .
 
+build-musl:
+	mkdir -p bin
+	go build -tags "musl" -o bin .
+
 pull:
 	@while true; do \
 		echo "Running git pull..."; \
