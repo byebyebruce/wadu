@@ -41,7 +41,7 @@ func GenFromPDF(ctx context.Context, openaiCli *openai.Client, vlmModel string, 
 	}
 
 	eg, egCtx := errgroup.WithContext(ctx)
-	eg.SetLimit(3) // 限制并发数
+	eg.SetLimit(1) // 限制并发数
 
 	book := &model.RawBook{
 		Pages: make([]model.RawPage, len(imgs)),
