@@ -61,7 +61,8 @@ func (w *Server) CreateFromRawBook(c *gin.Context) {
 }
 
 func (w *Server) ListBook(c *gin.Context) {
-	as, _, err := w.biz.DB.ListBook(0, 9)
+	// TODO
+	as, _, err := w.biz.DB.ListBook(0, 0)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
