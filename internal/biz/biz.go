@@ -84,6 +84,14 @@ func (b *Biz) CreateFromRawBook(ctx context.Context, rawBook *model.RawBook) (*m
 
 		book.Pages = append(book.Pages, p)
 	}
+	if len(rawBook.MP3) > 0 {
+		audioFile := fmt.Sprintf("%s_full.mp3", idStr)
+		if err := os.WriteFile(filepath.Join(dir, audioFile), rawBook.MP3, 0644); err != nil {
+			slog.Error("write audio", "error", err)
+		} else {
+			book.FullAudio = audioFile
+		}
+	}
 	err = b.DB.CreateBook(book)
 	return book, err
 }
@@ -108,6 +116,35 @@ func (b *Biz) doTTS(ctx context.Context, text string, file string) (string, erro
 	slog.Info("tts", "text", text, "file", dest)
 	return dest, err
 }
-func (b *Biz) GenFromPDF(ctx context.Context, pdf io.Reader) (*model.RawBook, error) {
-	return pdfbook.GenFromPDF(ctx, b.openaiCli.Client, b.openaiCli.Model, pdf)
+func (b *Biz) GenFromPDF(ctx context.Context, pdf io.Reader, audio []byte) (*model.RawBook, error) {
+	r, err := pdfbook.GenFromPDF(ctx, b.openaiCli.Client, b.openaiCli.Model, pdf)
+	if err != nil {
+		return nil, err
+	}
+	r.MP3 = audio
+	return r, nil
 }
+
+/*
+func (b *Biz) AddFullAudio(ctx context.Context, id string, name string, audio io.Reader) error {
+	buf, err := io.ReadAll(audio)
+	if err != nil {
+		return err
+	}
+
+	book, err := b.DB.GetBook(id)
+	if err != nil {
+		return err
+	}
+
+	file := fmt.Sprintf("%s_full.%s", id, filepath.Ext(name))
+	dest := filepath.Join(b.assetsDir, file)
+	if err := os.WriteFile(dest, buf, 0644); err != nil {
+		slog.Error("write audio", "error", err)
+		return err
+	}
+	book.FullAudio = file
+	return b.DB.UpdateBook(book)
+}
+
+*/

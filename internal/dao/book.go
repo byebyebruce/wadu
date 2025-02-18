@@ -58,6 +58,24 @@ func (d *Dao) ListBook(from, count int) ([]model.Book, int, error) {
 	return as, total, nil
 }
 
+// UpdateBook 更新书
+func (d *Dao) UpdateBook(a *model.Book) error {
+	data, err := json.Marshal(a)
+	if err != nil {
+		return err
+	}
+	return d.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(BookBucket))
+		if b == nil {
+			return fmt.Errorf("bucket not found")
+		}
+		if err := b.Put([]byte(a.ID), data); err != nil {
+			return err
+		}
+		return err
+	})
+}
+
 // GetBook 获取书
 func (d *Dao) GetBook(id string) (*model.Book, error) {
 	var (

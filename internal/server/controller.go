@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"net/http"
 	"time"
@@ -33,7 +34,33 @@ func (w *Server) GenBook(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*10)
 	defer cancel()
-	a, err := w.biz.GenFromPDF(ctx, docFile)
+
+	// audio
+	var audioBytes []byte
+	audio, err := c.FormFile("audio")
+	if err == nil && audio != nil {
+
+		// 读取文件
+		audioFile, err := audio.Open()
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error": err.Error(),
+			})
+			slog.Error("open file error", "error", err)
+			return
+		}
+		defer audioFile.Close()
+		audioBytes, err = io.ReadAll(audioFile)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error": err.Error(),
+			})
+			slog.Error("open file error", "error", err)
+			return
+		}
+	}
+
+	a, err := w.biz.GenFromPDF(ctx, docFile, audioBytes)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
@@ -67,9 +94,9 @@ func (w *Server) ListBook(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	resp := make([]model.BookInfo, 0, len(as))
+	resp := make([]BookInfo, 0, len(as))
 	for _, a := range as {
-		b := model.BookInfo{
+		b := BookInfo{
 			ID:        a.ID,
 			Title:     a.Title,
 			PublishAt: a.PublishAt,

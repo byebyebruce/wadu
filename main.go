@@ -84,7 +84,7 @@ func serverCMD() *cobra.Command {
 // 命令行上传
 func uploadCMD() *cobra.Command {
 	cmd := cobra.Command{
-		Use: "upload",
+		Use: "upload [pdf] <audio>",
 	}
 	server := cmd.Flags().String("server", "http://localhost:8081", "server address")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -101,10 +101,20 @@ func uploadCMD() *cobra.Command {
 		}
 		defer f.Close()
 
+		var audioBytes []byte
+		if len(args) > 1 {
+			if b, err := os.ReadFile(args[1]); err != nil {
+				return err
+			} else {
+				audioBytes = b
+			}
+		}
+
 		b, err := pdfbook.GenFromPDF(ctx, openaiCli.Client, openaiCli.Model, f)
 		if err != nil {
 			return err
 		}
+		b.MP3 = audioBytes
 		fmt.Println()
 		fmt.Println(b.Title)
 		for i, p := range b.Pages {
@@ -114,6 +124,7 @@ func uploadCMD() *cobra.Command {
 			}
 			fmt.Println()
 		}
+
 		fmt.Println("输入回车上传")
 		// 用户输入回车
 		fmt.Scanln()
