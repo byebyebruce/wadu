@@ -205,6 +205,14 @@
     </div>
 
     <script>
+        function addAudioElement(audioSrc, container) {
+            if (audioSrc && audioSrc.length > 0) {
+                const audioElement = document.createElement('audio');
+                audioElement.controls = true;
+                audioElement.src = audioSrc;
+                container.insertBefore(audioElement, container.firstChild);
+            }
+        }
         const articleId = new URLSearchParams(window.location.search).get('id');
         let currentAudio = null;
         let currentSentence = null;
@@ -284,6 +292,9 @@
         function displayArticle(article) {
             const container = document.getElementById('article-container');
             container.innerHTML = '';
+            if (article.full_audio && article.full_audio.length > 0) {
+                addAudioElement("/assets/" +article.full_audio, container);
+            }
             const fullTextBox = document.getElementById('full-text-box');
             fullTextBox.innerHTML = '';
 
