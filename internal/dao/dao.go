@@ -8,8 +8,11 @@ import (
 )
 
 var (
-	BookBucket = []byte("book")
+	BookBucket      = []byte("book")
+	BookIndexBucket = []byte("book_index")
+	BookIndexKey    = "book_index_key"
 )
+
 var (
 	// ErrNotFound not found
 	ErrNotFound = fmt.Errorf("not found")
@@ -24,18 +27,28 @@ func New(f string) (*Dao, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(BookBucket)
-		return err
-	})
-	if err != nil {
-		return nil, err
-	}
 
 	d := &Dao{
 		db: db,
 	}
 	return d, nil
+}
+
+func (d *Dao) InitDB() error {
+	err := d.db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists(BookBucket)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
+	err = upgradeDB_V1(d.db)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
 // NextID 生成下一个ID

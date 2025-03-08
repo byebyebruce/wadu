@@ -87,30 +87,27 @@ func (w *Server) CreateFromRawBook(c *gin.Context) {
 	c.JSON(http.StatusOK, book)
 }
 
+type ListBookRequest struct {
+	From  int `form:"from"`
+	Count int `form:"count"`
+}
+
 func (w *Server) ListBook(c *gin.Context) {
-	// TODO
-	as, _, err := w.biz.DB.ListBook(0, 0)
+	var req ListBookRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	bi, total, err := w.biz.DB.ListBook(req.From, req.Count)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	resp := make([]BookInfo, 0, len(as))
-	for _, a := range as {
-		b := BookInfo{
-			ID:        a.ID,
-			Title:     a.Title,
-			PublishAt: a.PublishAt,
-			TotalPage: len(a.Pages),
-		}
-		for _, p := range a.Pages {
-			if p.ImageURL != "" {
-				b.CoverURL = p.ImageURL
-				break
-			}
-		}
-		resp = append(resp, b)
-	}
 
+	resp := BookListResp{
+		Total: total,
+		Books: bi,
+	}
 	c.JSON(http.StatusOK, resp)
 }
 

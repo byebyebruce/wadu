@@ -54,6 +54,9 @@ func serverCMD() *cobra.Command {
 			return err
 		}
 		defer d.Close()
+		if err := d.InitDB(); err != nil {
+			return err
+		}
 		if err := os.MkdirAll(*assets, 0755); err != nil {
 			return err
 		}

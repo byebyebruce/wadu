@@ -1,5 +1,18 @@
 package model
 
+type BookIndex struct {
+	Total int        `json:"total"`
+	Books []BookInfo `json:"books"`
+}
+
+type BookInfo struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	PublishAt int64  `json:"publish_at"`
+	CoverURL  string `json:"cover_url"`
+	TotalPage int    `json:"total_page"`
+}
+
 type Book struct {
 	ID        string `json:"id"`
 	Title     string `json:"title"`

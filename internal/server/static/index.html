@@ -130,6 +130,42 @@
         .admin-link:hover {
             color: #0056b3;
         }
+
+        /* 分页控件样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .pagination button {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pagination button:hover {
+            background-color: #0056b3;
+        }
+
+        .pagination button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            display: flex;
+            align-items: center;
+            color: #555;
+        }
     </style>
 </head>
 <body>
@@ -150,94 +186,159 @@
     <div id="no-books" class="no-books" style="display: none;">
         当前没有图书。<a href="/?admin" class="admin-link">请到管理页面进行上传</a>
     </div>
+    
+    <!-- 添加分页控件 -->
+    <div class="pagination" id="pagination" style="display: none;">
+        <button id="prev-page">上一页</button>
+        <div class="pagination-info" id="pagination-info">第 <span id="current-page">1</span> 页，共 <span id="total-pages">1</span> 页</div>
+        <button id="next-page">下一页</button>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (isAdmin) {
                 document.getElementById('upload-button-container').style.display = 'block';
             }
-            fetch('/api/book/list')
-                .then(response => response.json())
-                .then(data => {
-                    const articlesContainer = document.getElementById('articles');
-                    const noBooksContainer = document.getElementById('no-books');
-                    articlesContainer.innerHTML = '';
+            
+            // 分页变量
+            const itemsPerPage = 12;
+            let currentPage = 1;
+            let totalBooks = 0;
+            let totalPages = 1;
+            
+            // 分页控件元素
+            const prevPageBtn = document.getElementById('prev-page');
+            const nextPageBtn = document.getElementById('next-page');
+            const currentPageSpan = document.getElementById('current-page');
+            const totalPagesSpan = document.getElementById('total-pages');
+            const paginationDiv = document.getElementById('pagination');
+            
+            // 更新分页按钮状态
+            function updatePaginationControls() {
+                currentPageSpan.textContent = currentPage;
+                totalPagesSpan.textContent = totalPages;
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages;
+            }
+            
+            // 加载指定页的图书
+            function loadBooks(page) {
+                const from = (page - 1) * itemsPerPage;
+                
+                fetch(`/api/book/list?from=${from}&count=${itemsPerPage}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const articlesContainer = document.getElementById('articles');
+                        const noBooksContainer = document.getElementById('no-books');
+                        articlesContainer.innerHTML = '';
 
-                    if (data.length === 0) {
-                        if (!isAdmin) {
-                            noBooksContainer.style.display = 'block';
-                        }
-                    } else {
-                        noBooksContainer.style.display = 'none';
-                        data.forEach(article => {
-                            const articleElement = document.createElement('div');
-                            articleElement.className = 'article';
-                            articleElement.addEventListener('click', () => {
-                                const url = `/read?id=${article.id}`;
-                                window.open(url, '_self');
-                            });
-
-                            // Title
-                            const titleElement = document.createElement('h2');
-                            titleElement.textContent = article.title;
-
-                            // Cover Image
-                            const coverImageElement = document.createElement('img');
-                            coverImageElement.className = 'cover-image';
-                            coverImageElement.src = "/assets/"+article.cover_url;
-
-                            // Publish Date
-                            const publishDateElement = document.createElement('div');
-                            publishDateElement.className = 'publish-date';
-                            const publishDate = new Date(article.publish_at * 1000);
-                            publishDateElement.textContent = `发布时间: ${publishDate.toLocaleString()}`;
-
-                            // Content
-                            const contentElement = document.createElement('div');
-                            contentElement.className = 'content';
-                            contentElement.textContent = article.content;
-
-                            // Total Pages
-                            const totalPageElement = document.createElement('div');
-                            totalPageElement.className = 'total-page';
-                            totalPageElement.textContent = `页数: ${article.total_page}`;
-
-                            // Append all elements to the article
-                            articleElement.appendChild(titleElement);
-                            articleElement.appendChild(coverImageElement);
-                            articleElement.appendChild(publishDateElement);
-                            articleElement.appendChild(contentElement);
-                            articleElement.appendChild(totalPageElement);
-
-                            // Admin Delete Button
-                            if (isAdmin) {
-                                const deleteButton = document.createElement('button');
-                                deleteButton.className = 'delete-button';
-                                deleteButton.textContent = '删除';
-                                deleteButton.addEventListener('click', (event) => {
-                                    event.stopPropagation(); // Prevent the click from propagating to the parent div
-                                    if (confirm('Are you sure you want to delete this article?')) {
-                                        fetch(`/api/book/delete/${article.id}`, { method: 'DELETE' })
-                                            .then(response => response.json())
-                                            .then(result => {
-                                                if (result.success) {
-                                                    location.reload();
-                                                } else {
-                                                    alert('Error deleting article.');
-                                                }
-                                            })
-                                            .catch(error => console.error('Error:', error));
-                                    }
+                        if (data.total === 0) {
+                            if (!isAdmin) {
+                                noBooksContainer.style.display = 'block';
+                            }
+                            paginationDiv.style.display = 'none';
+                        } else {
+                            noBooksContainer.style.display = 'none';
+                            totalBooks = data.total;
+                            totalPages = Math.ceil(totalBooks / itemsPerPage);
+                            
+                            if (totalPages > 1) {
+                                paginationDiv.style.display = 'flex';
+                            } else {
+                                paginationDiv.style.display = 'none';
+                            }
+                            
+                            data.books.forEach(article => {
+                                const articleElement = document.createElement('div');
+                                articleElement.className = 'article';
+                                articleElement.addEventListener('click', () => {
+                                    const url = `/read?id=${article.id}`;
+                                    window.open(url, '_self');
                                 });
 
-                                articleElement.appendChild(deleteButton);
-                            }
+                                // Title
+                                const titleElement = document.createElement('h2');
+                                titleElement.textContent = article.title;
 
-                            // Append the article to the articles container
-                            articlesContainer.appendChild(articleElement);
-                        });
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+                                // Cover Image
+                                const coverImageElement = document.createElement('img');
+                                coverImageElement.className = 'cover-image';
+                                coverImageElement.src = "/assets/"+article.cover_url;
+
+                                // Publish Date
+                                const publishDateElement = document.createElement('div');
+                                publishDateElement.className = 'publish-date';
+                                const publishDate = new Date(article.publish_at * 1000);
+                                publishDateElement.textContent = `发布时间: ${publishDate.toLocaleString()}`;
+
+                                // Content
+                                const contentElement = document.createElement('div');
+                                contentElement.className = 'content';
+                                contentElement.textContent = article.content;
+
+                                // Total Pages
+                                const totalPageElement = document.createElement('div');
+                                totalPageElement.className = 'total-page';
+                                totalPageElement.textContent = `页数: ${article.total_page}`;
+
+                                // Append all elements to the article
+                                articleElement.appendChild(titleElement);
+                                articleElement.appendChild(coverImageElement);
+                                articleElement.appendChild(publishDateElement);
+                                articleElement.appendChild(contentElement);
+                                articleElement.appendChild(totalPageElement);
+
+                                // Admin Delete Button
+                                if (isAdmin) {
+                                    const deleteButton = document.createElement('button');
+                                    deleteButton.className = 'delete-button';
+                                    deleteButton.textContent = '删除';
+                                    deleteButton.addEventListener('click', (event) => {
+                                        event.stopPropagation(); // Prevent the click from propagating to the parent div
+                                        if (confirm('Are you sure you want to delete this article?')) {
+                                            fetch(`/api/book/delete/${article.id}`, { method: 'DELETE' })
+                                                .then(response => response.json())
+                                                .then(result => {
+                                                    if (result.success) {
+                                                        loadBooks(currentPage);
+                                                    } else {
+                                                        alert('Error deleting article.');
+                                                    }
+                                                })
+                                                .catch(error => console.error('Error:', error));
+                                        }
+                                    });
+
+                                    articleElement.appendChild(deleteButton);
+                                }
+
+                                // Append the article to the articles container
+                                articlesContainer.appendChild(articleElement);
+                            });
+                            
+                            updatePaginationControls();
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+            
+            // 初始加载第一页
+            loadBooks(currentPage);
+                
+            // 添加分页事件监听器
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadBooks(currentPage);
+                }
+            });
+            
+            nextPageBtn.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    loadBooks(currentPage);
+                }
+            });
         });
     </script>
 </body>

@@ -3,7 +3,6 @@ package dao
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/byebyebruce/wadu/model"
@@ -29,33 +28,61 @@ func (d *Dao) CreateBook(a *model.Book) error {
 		if err := b.Put([]byte(a.ID), data); err != nil {
 			return err
 		}
-		return nil
+
+		b = tx.Bucket([]byte(BookIndexBucket))
+		if b == nil {
+			return fmt.Errorf("bucket not found")
+		}
+		bi, err := get[model.BookIndex](tx, string(BookIndexBucket), BookIndexKey)
+		if err != nil {
+			return err
+		}
+
+		bio := model.BookInfo{
+			ID:        a.ID,
+			Title:     a.Title,
+			PublishAt: a.PublishAt,
+			TotalPage: len(a.Pages),
+		}
+		for _, v := range a.Pages {
+			if v.ImageURL != "" {
+				bio.CoverURL = v.ImageURL
+				break
+			}
+		}
+		bi.Books = append([]model.BookInfo{bio}, bi.Books...)
+		bi.Total = len(bi.Books)
+		return set(tx, string(BookIndexBucket), BookIndexKey, bi)
 	})
 	return nil
 }
 
 // ListBook 列出书
-func (d *Dao) ListBook(from, count int) ([]model.Book, int, error) {
+func (d *Dao) ListBook(from, count int) ([]model.BookInfo, int, error) {
 	var (
-		as    []model.Book
+		bi    *model.BookIndex
 		err   error
 		total int
 	)
 	d.db.View(func(tx *bolt.Tx) error {
-		as, total, err = listBackward[model.Book](tx, string(BookBucket), from, count)
-		b := tx.Bucket([]byte(BookBucket))
-		if b == nil {
-			return fmt.Errorf("bucket not found")
-		}
+		bi, err = get[model.BookIndex](tx, string(BookIndexBucket), BookIndexKey)
 		return err
 	})
 	if err != nil {
 		return nil, total, err
 	}
-	sort.Slice(as, func(i, j int) bool {
-		return as[i].PublishAt > as[j].PublishAt
-	})
-	return as, total, nil
+	total = bi.Total
+	if from >= total {
+		return nil, total, nil
+	}
+	to := from + count
+	if count <= 0 {
+		to = total
+	}
+	if to > total {
+		to = total
+	}
+	return bi.Books[from:to], total, nil
 }
 
 // UpdateBook 更新书
@@ -93,14 +120,22 @@ func (d *Dao) GetBook(id string) (*model.Book, error) {
 // DeleteBook 删除书
 func (d *Dao) DeleteBook(id string) error {
 	return d.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(BookBucket))
-		if b == nil {
-			return fmt.Errorf("bucket not found")
+		bi, err := get[model.BookIndex](tx, string(BookIndexBucket), BookIndexKey)
+		if err != nil {
+			return err
 		}
-		v := b.Get([]byte(id))
-		if len(v) == 0 {
-			return ErrNotFound
+		for i, v := range bi.Books {
+			if v.ID == id {
+				bi.Books = append(bi.Books[:i], bi.Books[i+1:]...)
+				break
+			}
 		}
-		return b.Delete([]byte(id))
+		bi.Total = len(bi.Books)
+		if err := set(tx, string(BookIndexBucket), BookIndexKey, bi); err != nil {
+			return err
+		}
+		bs := tx.Bucket([]byte(BookBucket))
+		bs.Delete([]byte(id))
+		return nil
 	})
 }
