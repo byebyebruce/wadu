@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +17,8 @@
         #articles {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px; /* Reduced gap */
+            gap: 10px;
+            /* Reduced gap */
         }
 
         .article {
@@ -24,8 +26,10 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 10px; /* Reduced padding */
-            flex: 0 1 calc(20% - 10px); /* Adjusted width to fit 5 per row */
+            padding: 10px;
+            /* Reduced padding */
+            flex: 0 1 calc(20% - 10px);
+            /* Adjusted width to fit 5 per row */
             box-sizing: border-box;
             transition: transform 0.2s;
             position: relative;
@@ -38,7 +42,8 @@
 
         .article h2 {
             color: #007bff;
-            margin: 0 0 5px; /* Reduced margin */
+            margin: 0 0 5px;
+            /* Reduced margin */
             transition: color 0.2s;
         }
 
@@ -53,23 +58,26 @@
         }
 
         .content {
-            margin-top: 5px; /* Reduced margin-top */
+            margin-top: 5px;
+            /* Reduced margin-top */
             font-size: 1em;
             color: #666;
         }
-        
+
         .cover-image {
             width: 30%;
             height: auto;
             display: block;
-            margin: 5px auto; /* Reduced margin */
+            margin: 5px auto;
+            /* Reduced margin */
         }
 
         .total-page {
             font-style: italic;
             font-size: 0.9em;
             color: #555;
-            margin-top: 5px; /* Reduced margin-top */
+            margin-top: 5px;
+            /* Reduced margin-top */
         }
 
         .delete-button {
@@ -94,7 +102,8 @@
 
         .upload-button-container {
             text-align: center;
-            margin-bottom: 10px; /* Reduced margin-bottom */
+            margin-bottom: 10px;
+            /* Reduced margin-bottom */
         }
 
         .upload-button {
@@ -168,6 +177,7 @@
         }
     </style>
 </head>
+
 <body>
     <h1>图书列表</h1>
     <script>
@@ -186,11 +196,12 @@
     <div id="no-books" class="no-books" style="display: none;">
         当前没有图书。<a href="/?admin" class="admin-link">请到管理页面进行上传</a>
     </div>
-    
+
     <!-- 添加分页控件 -->
     <div class="pagination" id="pagination" style="display: none;">
         <button id="prev-page">上一页</button>
-        <div class="pagination-info" id="pagination-info">第 <span id="current-page">1</span> 页，共 <span id="total-pages">1</span> 页</div>
+        <div class="pagination-info" id="pagination-info">第 <span id="current-page">1</span> 页，共 <span
+                id="total-pages">1</span> 页</div>
         <button id="next-page">下一页</button>
     </div>
 
@@ -199,20 +210,20 @@
             if (isAdmin) {
                 document.getElementById('upload-button-container').style.display = 'block';
             }
-            
+
             // 分页变量
             const itemsPerPage = 12;
             let currentPage = 1;
             let totalBooks = 0;
             let totalPages = 1;
-            
+
             // 分页控件元素
             const prevPageBtn = document.getElementById('prev-page');
             const nextPageBtn = document.getElementById('next-page');
             const currentPageSpan = document.getElementById('current-page');
             const totalPagesSpan = document.getElementById('total-pages');
             const paginationDiv = document.getElementById('pagination');
-            
+
             // 更新分页按钮状态
             function updatePaginationControls() {
                 currentPageSpan.textContent = currentPage;
@@ -220,11 +231,11 @@
                 prevPageBtn.disabled = currentPage === 1;
                 nextPageBtn.disabled = currentPage === totalPages;
             }
-            
+
             // 加载指定页的图书
             function loadBooks(page) {
                 const from = (page - 1) * itemsPerPage;
-                
+
                 fetch(`/api/book/list?from=${from}&count=${itemsPerPage}`)
                     .then(response => response.json())
                     .then(data => {
@@ -241,19 +252,20 @@
                             noBooksContainer.style.display = 'none';
                             totalBooks = data.total;
                             totalPages = Math.ceil(totalBooks / itemsPerPage);
-                            
+
                             if (totalPages > 1) {
                                 paginationDiv.style.display = 'flex';
                             } else {
                                 paginationDiv.style.display = 'none';
                             }
-                            
+
                             data.books.forEach(article => {
                                 const articleElement = document.createElement('div');
                                 articleElement.className = 'article';
                                 articleElement.addEventListener('click', () => {
                                     const url = `/read?id=${article.id}`;
-                                    window.open(url, '_self');
+                                    //window.open(url, '_self');
+                                    window.open(url, '_blank');
                                 });
 
                                 // Title
@@ -263,7 +275,7 @@
                                 // Cover Image
                                 const coverImageElement = document.createElement('img');
                                 coverImageElement.className = 'cover-image';
-                                coverImageElement.src = "/assets/"+article.cover_url;
+                                coverImageElement.src = "/assets/" + article.cover_url;
 
                                 // Publish Date
                                 const publishDateElement = document.createElement('div');
@@ -315,16 +327,16 @@
                                 // Append the article to the articles container
                                 articlesContainer.appendChild(articleElement);
                             });
-                            
+
                             updatePaginationControls();
                         }
                     })
                     .catch(error => console.error('Error:', error));
             }
-            
+
             // 初始加载第一页
             loadBooks(currentPage);
-                
+
             // 添加分页事件监听器
             prevPageBtn.addEventListener('click', () => {
                 if (currentPage > 1) {
@@ -332,7 +344,7 @@
                     loadBooks(currentPage);
                 }
             });
-            
+
             nextPageBtn.addEventListener('click', () => {
                 if (currentPage < totalPages) {
                     currentPage++;
@@ -342,4 +354,5 @@
         });
     </script>
 </body>
+
 </html>
