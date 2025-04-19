@@ -113,9 +113,9 @@ func NewTTSWithEnv() (*TTS, error) {
 	return NewTTS(cfg)
 }
 
-func (h *TTS) applyTTSConfig(opts ...tts.TTSOption) *tts.TTSConfig {
-	cfg := &tts.TTSConfig{
-		VoiceType:    "BV213_streaming",
+func (h *TTS) applyTTSConfig(opts ...tts.Option) *tts.Config {
+	cfg := &tts.Config{
+		Voice:        "BV213_streaming",
 		AudioRate:    16000,
 		AudioType:    "wav", // default wav
 		AudioSpeed:   1.0,   // 语速 0.3~3
@@ -123,7 +123,7 @@ func (h *TTS) applyTTSConfig(opts ...tts.TTSOption) *tts.TTSConfig {
 	}
 
 	if len(h.cfg.VoiceType) > 0 {
-		cfg.VoiceType = h.cfg.VoiceType
+		cfg.Voice = h.cfg.VoiceType
 	}
 	for _, opt := range opts {
 		opt(cfg)
@@ -131,12 +131,12 @@ func (h *TTS) applyTTSConfig(opts ...tts.TTSOption) *tts.TTSConfig {
 	return cfg
 }
 
-func (h *TTS) Synthesis(ctx context.Context, text string, option ...tts.TTSOption) ([]byte, error) {
+func (h *TTS) Synthesis(ctx context.Context, text string, option ...tts.Option) ([]byte, error) {
 	cfg := h.applyTTSConfig(option...)
 	return h.SynthesisWithConfig(ctx, text, cfg)
 }
 
-func (h *TTS) SynthesisSaveFile(ctx context.Context, text string, out string, option ...tts.TTSOption) error {
+func (h *TTS) SynthesisSaveFile(ctx context.Context, text string, out string, option ...tts.Option) error {
 	audio, err := h.Synthesis(ctx, text, option...)
 	if err != nil {
 		return err
@@ -147,7 +147,7 @@ func (h *TTS) SynthesisSaveFile(ctx context.Context, text string, out string, op
 func (h *TTS) SynthesisWithConfig(
 	ctx context.Context,
 	text string,
-	cfg *tts.TTSConfig,
+	cfg *tts.Config,
 ) ([]byte, error) {
 
 	reqID := uuid.NewString()
@@ -164,7 +164,7 @@ func (h *TTS) SynthesisWithConfig(
 	params["user"]["uid"] = "uid"
 	params["audio"] = make(map[string]interface{})
 	//填写选中的音色代号
-	params["audio"]["voice_type"] = cfg.VoiceType
+	params["audio"]["voice_type"] = cfg.Voice
 	params["audio"]["encoding"] = cfg.AudioType
 	params["audio"]["speed_ratio"] = cfg.AudioSpeed
 	params["audio"]["volume_ratio"] = 1.0

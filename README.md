@@ -105,5 +105,5 @@ github.com/gen2brain/go-fitz使用了mupdf库
 - [ ] 支持更多语音合成服务
 - [ ] 支持上传URL
 - [ ] 支持上传时修正句子
-- [ ] 书目录分页
+- [x] 书目录分页
 - [x] Docker
