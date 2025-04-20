@@ -57,7 +57,8 @@
             width: 90%;
             max-width: 800px;
             margin-bottom: 20px;
-            margin-top: 70px; /* Offset for fixed status bar */
+            margin-top: 70px;
+            /* Offset for fixed status bar */
         }
 
         h1 {
@@ -86,8 +87,10 @@
         }
 
         .sentence {
-            margin-bottom: 2px; /* Further reduced margin */
-            padding: 0px 2px; /* Further reduced padding */
+            margin-bottom: 2px;
+            /* Further reduced margin */
+            padding: 0px 2px;
+            /* Further reduced padding */
             border-radius: 5px;
             background-color: #f9f9f9;
             cursor: pointer;
@@ -97,10 +100,14 @@
         }
 
         .content-box .sentence {
-            margin-bottom: 2px; /* Further reduced margin */
-            padding: 0px 2px; /* Further reduced padding */
-            background-color: #f9f9f9; /* Keep the background color for better readability */
-            border-radius: 5px; /* Keep the border-radius for better aesthetics */
+            margin-bottom: 2px;
+            /* Further reduced margin */
+            padding: 0px 2px;
+            /* Further reduced padding */
+            background-color: #f9f9f9;
+            /* Keep the background color for better readability */
+            border-radius: 5px;
+            /* Keep the border-radius for better aesthetics */
             cursor: pointer;
             position: relative;
             display: flex;
@@ -115,7 +122,8 @@
 
         .sentence .icon {
             margin-right: 5px;
-            font-size: 1em; /* Reduced size of icon */
+            font-size: 1em;
+            /* Reduced size of icon */
         }
 
         .sentence.playing {
@@ -123,8 +131,10 @@
         }
 
         .content {
-            font-size: 1em; /* Increased font size */
-            line-height: 1.2em; /* Reduced line spacing */
+            font-size: 1em;
+            /* Increased font size */
+            line-height: 1.2em;
+            /* Reduced line spacing */
         }
 
         .collapsible {
@@ -139,7 +149,8 @@
             font-size: 1.2em;
             border-radius: 5px;
             margin-bottom: 5px;
-            margin-top: 70px; /* Offset for fixed status bar */
+            margin-top: 70px;
+            /* Offset for fixed status bar */
         }
 
         .collapsible:hover {
@@ -148,15 +159,20 @@
 
         .content-box {
             padding: 10px;
-            display: block; /* Ensure content box is expanded by default */
+            display: block;
+            /* Ensure content box is expanded by default */
             overflow: hidden;
             background-color: white;
             border: 1px solid #ddd;
             border-radius: 5px;
-            font-size: 1.2em; /* Increase the font size */
-            line-height: 1.5em; /* Adjust line spacing */
-            width: 90%; /* Align width with container */
-            max-width: 800px; /* Align max-width with container */
+            font-size: 1.2em;
+            /* Increase the font size */
+            line-height: 1.5em;
+            /* Adjust line spacing */
+            width: 90%;
+            /* Align width with container */
+            max-width: 800px;
+            /* Align max-width with container */
         }
 
         @media (min-width: 600px) {
@@ -166,12 +182,15 @@
             }
 
             .content {
-                font-size: 1.1em; /* Adjust font size */
+                font-size: 1.1em;
+                /* Adjust font size */
             }
 
             .content-box {
-                font-size: 1.3em; /* Adjust font size */
-                line-height: 1.6em; /* Adjust line spacing */
+                font-size: 1.3em;
+                /* Adjust font size */
+                line-height: 1.6em;
+                /* Adjust line spacing */
             }
         }
 
@@ -181,12 +200,15 @@
             }
 
             .content {
-                font-size: 1.2em; /* Adjust font size */
+                font-size: 1.2em;
+                /* Adjust font size */
             }
 
             .content-box {
-                font-size: 1.4em; /* Adjust font size */
-                line-height: 1.8em; /* Adjust line spacing */
+                font-size: 1.4em;
+                /* Adjust font size */
+                line-height: 1.8em;
+                /* Adjust line spacing */
             }
         }
     </style>
@@ -221,11 +243,11 @@
             try {
                 const response = await fetch(`/api/book/${articleId}`);
                 if (!response.ok) {
-                   	throw new Error('Network response was not ok ' + response.statusText);
+                    throw new Error('Network response was not ok ' + response.statusText);
                 }
                 const article = await response.json();
                 if (!article.pages) {
-                	throw new Error('Article pages not defined');
+                    throw new Error('Article pages not defined');
                 }
                 document.getElementById('article-title').textContent = article.title;
                 displayArticle(article);
@@ -293,7 +315,7 @@
             const container = document.getElementById('article-container');
             container.innerHTML = '';
             if (article.full_audio && article.full_audio.length > 0) {
-                addAudioElement("/assets/" +article.full_audio, container);
+                addAudioElement("/assets/" + article.full_audio, container);
             }
             const fullTextBox = document.getElementById('full-text-box');
             fullTextBox.innerHTML = '';
@@ -314,7 +336,7 @@
 
                 if (page.sentences) {
                     page.sentences.forEach(sentenceData => {
-                        const sentenceElementPage = createSentenceElement(sentenceData, true);
+                        const sentenceElementPage = createSentenceElement(sentenceData, false);
                         contentContainer.appendChild(sentenceElementPage);
 
                         const sentenceElementFull = createSentenceElement(sentenceData, false);
@@ -336,7 +358,7 @@
             this.classList.toggle("active");
             if (contentBox.style.display === "block") {
                 contentBox.style.display = "none";
-                this.textContent = "Show All Sentences"; 
+                this.textContent = "Show All Sentences";
             } else {
                 contentBox.style.display = "block";
                 this.textContent = "Hide All Sentences";
