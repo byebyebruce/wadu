@@ -28,6 +28,7 @@ func main() {
 		uploadCMD(),
 		promptCMD(),
 		pdf2imgCMD(),
+		uploadImageCMD(),
 	)
 	if err := rootCMD.Execute(); err != nil {
 		panic(err)
@@ -121,6 +122,65 @@ func uploadCMD() *cobra.Command {
 			return err
 		}
 		b.MP3 = audioBytes
+		fmt.Println()
+		fmt.Println(b.Title)
+		for i, p := range b.Pages {
+			fmt.Println("page", i)
+			for _, s := range p.Sentences {
+				fmt.Println("", "sentence", s)
+			}
+			fmt.Println()
+		}
+
+		fmt.Println("输入回车上传")
+		// 用户输入回车
+		fmt.Scanln()
+
+		uploadCtx, uploadCancel := context.WithTimeout(context.Background(), time.Minute*10)
+		defer uploadCancel()
+		err = client.PostRawBook(uploadCtx, *server, b)
+		if err != nil {
+			return err
+		}
+		fmt.Println("上传成功")
+		return err
+	}
+	return &cmd
+}
+
+func uploadImageCMD() *cobra.Command {
+	var (
+		title string
+	)
+	cmd := cobra.Command{
+		Use: "upimg <title> <image1> <image2> ...",
+	}
+	cmd.Flags().StringVar(&title, "title", "", "book title")
+	server := cmd.Flags().String("server", "http://localhost:8081", "server address")
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		openaiCli, err := vlm.NewClientFromEnv()
+		if err != nil {
+			panic(err)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute*10)
+		defer cancel()
+		//title:= args[0]
+		images := args[:]
+		imagesBytes := make([][]byte, 0, len(images))
+		for _, img := range images {
+			f, err := os.ReadFile(img)
+			if err != nil {
+				panic(err)
+			}
+			imagesBytes = append(imagesBytes, f)
+		}
+
+		b, err := pdfbook.GenFromImages(ctx, openaiCli.Client, openaiCli.Model, title, imagesBytes...)
+		if err != nil {
+			return err
+		}
+		//b.MP3 = audioBytes
 		fmt.Println()
 		fmt.Println(b.Title)
 		for i, p := range b.Pages {

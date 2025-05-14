@@ -39,12 +39,20 @@ func GenFromPDF(ctx context.Context, openaiCli *openai.Client, vlmModel string, 
 	if len(imgs) == 0 {
 		return nil, fmt.Errorf("PDF没有内容")
 	}
+	return GenFromImages(ctx, openaiCli, vlmModel, "", imgs...)
+}
 
+func GenFromImages(ctx context.Context, openaiCli *openai.Client, vlmModel string, title string, imgs ...[]byte) (*model.RawBook, error) {
+	if len(imgs) == 0 {
+		return nil, fmt.Errorf("没有图片")
+	}
+	slog.Info("GenFromImages", "num", len(imgs))
 	eg, egCtx := errgroup.WithContext(ctx)
 	eg.SetLimit(1) // 限制并发数
 
 	book := &model.RawBook{
 		Pages: make([]model.RawPage, len(imgs)),
+		Title: title,
 	}
 	for _i, _img := range imgs {
 		i, img := _i, _img
