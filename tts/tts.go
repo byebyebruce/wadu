@@ -15,6 +15,12 @@ type Config struct {
 
 type Option func(*Config)
 
+func ApplyOption(cfg *Config, o ...Option) {
+	for _, opt := range o {
+		opt(cfg)
+	}
+}
+
 func WithVoiceType(voiceType string) Option {
 	return func(cfg *Config) {
 		cfg.Voice = voiceType
@@ -53,5 +59,6 @@ func (cfg *Config) Apply(o ...Option) {
 }
 
 type TTS interface {
+	SynthesisFile(ctx context.Context, text string, file string, option ...Option) error
 	Synthesis(ctx context.Context, text string, option ...Option) ([]byte, error)
 }

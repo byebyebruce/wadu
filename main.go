@@ -13,7 +13,8 @@ import (
 	"github.com/byebyebruce/wadu/internal/server"
 	"github.com/byebyebruce/wadu/pdfbook"
 	"github.com/byebyebruce/wadu/pkg/pdfx"
-	"github.com/byebyebruce/wadu/tts/edgetts"
+	//"github.com/byebyebruce/wadu/tts/edgetts"
+	"github.com/byebyebruce/wadu/tts/openaitts"
 	"github.com/byebyebruce/wadu/vlm"
 
 	"github.com/joho/godotenv"
@@ -68,7 +69,8 @@ func serverCMD() *cobra.Command {
 				return err
 			}
 		*/
-		tts := edgetts.New()
+		//tts := edgetts.New()
+    tts:=openaitts.NewTTSFromEnv()
 
 		if len(*promptFile) > 0 {
 			b, err := os.ReadFile(*promptFile)
