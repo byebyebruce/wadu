@@ -100,7 +100,7 @@ func (b *Biz) doTTS(ctx context.Context, text string, file string) (string, erro
 	buf, err := b.tts.Synthesis(ctx,
 		text,
 		tts.WithAudioType("mp3"),
-		tts.WithAudioSpeed(0.8),
+		tts.WithAudioSpeed(0.7),
 	)
 	if err != nil {
 		slog.Error("tts", "text", text, "error", err)

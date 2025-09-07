@@ -69,14 +69,14 @@ func NewTTSFromEnv() *TTS {
 }
 
 func (s *TTS) SynthesisFile(ctx context.Context, text string, file string, option ...tts.Option) error {
-  b,err:=s.Synthesis(ctx, text, option...)
-  if err!=nil {
-    return err
-  }
+	b, err := s.Synthesis(ctx, text, option...)
+	if err != nil {
+		return err
+	}
 	return os.WriteFile(file, b, 0644)
 }
-func (s *TTS)Synthesis(ctx context.Context, text string, option ...tts.Option) ([]byte, error) {
-//func (s *TTS) SynthesisFile(ctx context.Context, text string, file string, option ...tts.Option) error {
+func (s *TTS) Synthesis(ctx context.Context, text string, option ...tts.Option) ([]byte, error) {
+	//func (s *TTS) SynthesisFile(ctx context.Context, text string, file string, option ...tts.Option) error {
 	opt := tts.Config{
 		//Voice:     "FunAudioLLM/CosyVoice2-0.5B:alex",
 		Voice:     "FunAudioLLM/CosyVoice2-0.5B:david",
@@ -91,22 +91,23 @@ func (s *TTS)Synthesis(ctx context.Context, text string, option ...tts.Option) (
 		"voice":           opt.Voice,
 		"sample_rate":     opt.AudioRate,
 		"response_format": opt.AudioType, // Default to wav
+		"speed":           opt.AudioSpeed,
 	}
 	body, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", s.baseURL+"/audio/speech", bytes.NewReader(body))
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+s.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -117,8 +118,8 @@ func (s *TTS)Synthesis(ctx context.Context, text string, option ...tts.Option) (
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
-	return b,nil
+	return b, nil
 }
