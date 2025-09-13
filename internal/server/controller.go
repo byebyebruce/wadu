@@ -118,6 +118,16 @@ func (w *Server) GetBook(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+	if a.FullAudio != "" {
+		for i, p := range a.Pages {
+			for j, s := range p.Sentences {
+				if s.AudioEnd > 0 {
+					a.Pages[i].Sentences[j].AudioURL = a.FullAudio
+				}
+				//s.AudioURL = a.FullAudio //fmt.Sprintf("/assets/%s", s.AudioURL)
+			}
+		}
+	}
 	c.JSON(http.StatusOK, a)
 }
 
