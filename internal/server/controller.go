@@ -121,7 +121,7 @@ func (w *Server) GetBook(c *gin.Context) {
 	if a.FullAudio != "" {
 		for i, p := range a.Pages {
 			for j, s := range p.Sentences {
-				if s.AudioEnd > 0 {
+				if s.AudioEnd >= 0 { // temp
 					a.Pages[i].Sentences[j].AudioURL = a.FullAudio
 				}
 				//s.AudioURL = a.FullAudio //fmt.Sprintf("/assets/%s", s.AudioURL)

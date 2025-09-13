@@ -522,7 +522,7 @@
 					</div>
 					<div class="page-footer">
 						<button class="add-sentence-btn" onclick="addNewSentence(${pageIndex})">+ Add Sentence</button>
-						<button class="save-all-btn" id="save-btn-${pageIndex}" onclick="savePageChanges(${pageIndex})" disabled>
+						<button class="save-all-btn" id="save-btn-${pageIndex}" onclick="savePageChanges(${pageIndex})">
 							Save Changes
 						</button>
 					</div>
@@ -693,22 +693,18 @@
 
 		function updatePageSaveButton(pageIndex) {
 			const saveBtn = document.getElementById(`save-btn-${pageIndex}`);
-			if (hasUnsavedChanges[pageIndex]) {
-				saveBtn.disabled = false;
-			} else {
-				saveBtn.disabled = true;
-			}
+			// Always keep the button enabled
+			saveBtn.disabled = false;
 		}
 
 		async function savePageChanges(pageIndex) {
 			if (!hasUnsavedChanges[pageIndex]) {
-				showSuccess('No changes to save for this page');
+				alert('No changes to save for this page');
 				return;
 			}
 
 			try {
 				const saveBtn = document.getElementById(`save-btn-${pageIndex}`);
-				saveBtn.disabled = true;
 				saveBtn.textContent = 'Saving...';
 
 				const response = await fetch(`/api/book/update-sentences/${bookId}/${pageIndex}`, {
@@ -732,11 +728,10 @@
 				// Update saved pages count
 				savedPagesCount++;
 
-				// Show success feedback
-				showSuccess(`Page ${pageIndex + 1} saved successfully! (${savedPagesCount} total saves)`);
+				// Show success feedback with alert
+				alert(`Page ${pageIndex + 1} saved successfully! (${savedPagesCount} total saves)`);
 
 				// Visual feedback on button
-				const saveBtn = document.getElementById(`save-btn-${pageIndex}`);
 				saveBtn.textContent = '✓ Saved!';
 				saveBtn.style.backgroundColor = '#28a745';
 				saveBtn.style.transform = 'scale(1.1)';
@@ -757,10 +752,9 @@
 
 			} catch (error) {
 				console.error('Error saving changes:', error);
-				showError(`Failed to save changes for page ${pageIndex + 1}: ${error.message}`);
+				alert(`Failed to save changes for page ${pageIndex + 1}: ${error.message}`);
 			} finally {
 				const saveBtn = document.getElementById(`save-btn-${pageIndex}`);
-				saveBtn.disabled = false;
 				saveBtn.textContent = 'Save Changes';
 			}
 		}
@@ -851,14 +845,15 @@
 				});
 			}
 
-			// Create audio element if it doesn't exist
-			if (!audio) {
-				audio = document.createElement('audio');
-				audio.id = audioId;
-				audio.style.display = 'none';
-				audio.innerHTML = `<source src="/assets/${audioUrl}" type="audio/mpeg">`;
-				button.parentNode.appendChild(audio);
+			// Always create a new audio element to ensure fresh loading
+			if (audio) {
+				audio.remove();
 			}
+			audio = document.createElement('audio');
+			audio.id = audioId;
+			audio.style.display = 'none';
+			audio.innerHTML = `<source src="/assets/${audioUrl}" type="audio/mpeg">`;
+			button.parentNode.appendChild(audio);
 
 			// Parse timing value
 			let startTime = 0;
@@ -882,14 +877,25 @@
 			console.log('Parsed timing - Start:', startTime, 'End:', endTime);
 
 			// Set up audio event listeners
-			audio.onloadeddata = function () {
-				console.log('Audio loaded, setting time to:', startTime);
+			let hasStartedPlaying = false;
+
+			function startPlayback() {
+				if (hasStartedPlaying) return;
+				hasStartedPlaying = true;
+
+				console.log('Starting playback, setting time to:', startTime);
 				audio.currentTime = startTime;
-				audio.play();
-				button.textContent = '⏸ Pause';
-				button.classList.remove('btn-primary');
-				button.classList.add('btn-secondary');
-			};
+				// Small delay to ensure currentTime is set
+				setTimeout(() => {
+					audio.play();
+					button.textContent = '⏸ Pause';
+					button.classList.remove('btn-primary');
+					button.classList.add('btn-secondary');
+				}, 100);
+			}
+
+			audio.oncanplaythrough = startPlayback;
+			audio.onloadeddata = startPlayback;
 
 			audio.ontimeupdate = function () {
 				if (audio.currentTime >= endTime) {
