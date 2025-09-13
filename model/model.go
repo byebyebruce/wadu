@@ -25,8 +25,11 @@ type Book struct {
 type Pages []Page
 
 type Sentence struct {
-	Content  string `json:"content"`
-	AudioURL string `json:"audio_url"`
+	Content    string  `json:"content"`
+	Translate  string  `json:"translate"`
+	AudioURL   string  `json:"audio_url"`
+	AudioStart float64 `json:"audio_start"`
+	AudioEnd   float64 `json:"audio_end"`
 }
 
 type Page struct {
@@ -41,7 +44,8 @@ type RawPage struct {
 }
 
 type RawBook struct {
-	Title string    `json:"title"`
-	Pages []RawPage `json:"pages"`
-	MP3   []byte    `json:"mp3"`
+	Title     string    `json:"title"`
+	Translate string    `json:"translate"`
+	Pages     []RawPage `json:"pages"`
+	MP3       []byte    `json:"mp3"`
 }

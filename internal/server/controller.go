@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/byebyebruce/wadu/model"
@@ -123,6 +124,30 @@ func (w *Server) GetBook(c *gin.Context) {
 func (w *Server) DeleteBook(c *gin.Context) {
 	err := w.biz.DB.DeleteBook(c.Param("id"))
 	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, nil)
+}
+
+func (w *Server) UpdateSentences(c *gin.Context) {
+	id := c.Param("id")
+	pageStr := c.Param("page")
+	var sentences []model.Sentence
+	if err := c.BindJSON(&sentences); err != nil {
+		slog.Error("bind sentences", "error", err)
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	pageInt, err := strconv.Atoi(pageStr)
+	if err != nil {
+		slog.Error("convert page to int", "error", err)
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	err = w.biz.DB.UpdateSentences(id, pageInt, sentences)
+	if err != nil {
+		slog.Error("update sentences", "error", err)
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}

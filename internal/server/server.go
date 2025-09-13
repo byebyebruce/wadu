@@ -47,6 +47,9 @@ func (w *Server) Run(addr string, debug bool) error {
 	r.GET("/read", func(c *gin.Context) {
 		c.HTML(200, "read.html", gin.H{})
 	})
+	r.GET("/edit", func(c *gin.Context) {
+		c.HTML(200, "edit.html", gin.H{})
+	})
 	r.GET("/upload", func(c *gin.Context) {
 		c.HTML(200, "upload.html", gin.H{})
 	})
@@ -56,6 +59,7 @@ func (w *Server) Run(addr string, debug bool) error {
 	r.GET("/api/book/:id", w.GetBook)
 	r.DELETE("/api/book/delete/:id", w.DeleteBook)
 	r.POST("/api/book/gen", w.GenBook)
+	r.POST("/api/book/update-sentences/:id/:page", w.UpdateSentences)
 	r.POST(APIPathCreateBook, w.CreateFromRawBook)
 
 	return r.Run(addr)

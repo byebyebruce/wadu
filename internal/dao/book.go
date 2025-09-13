@@ -139,3 +139,15 @@ func (d *Dao) DeleteBook(id string) error {
 		return nil
 	})
 }
+
+func (d *Dao) UpdateSentences(id string, page int, sentences []model.Sentence) error {
+	book, err := d.GetBook(id)
+	if err != nil {
+		return err
+	}
+	if page < 0 || page >= len(book.Pages) {
+		return fmt.Errorf("page out of range")
+	}
+	book.Pages[page].Sentences = sentences
+	return d.UpdateBook(book)
+}

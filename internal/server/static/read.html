@@ -42,6 +42,20 @@
             padding: 10px;
         }
 
+        .status-bar .edit-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 10px;
+            text-decoration: none;
+        }
+
+        .status-bar .edit-button:hover {
+            color: #e3f2fd;
+        }
+
         .status-bar .title {
             flex: 1;
             text-align: center;
@@ -218,7 +232,7 @@
     <div class="status-bar">
         <button class="back-button" onclick="location.href='/'">⟵ Back</button>
         <div class="title" id="article-title">Read Article</div>
-        <div class="back-button"></div> <!-- Placeholder to keep title centered -->
+        <a class="edit-button" id="edit-button" href="#" style="display: none;">✏️ Edit</a>
     </div>
     <button class="collapsible">Show All Sentences</button>
     <div class="content-box" id="full-text-box" style="display: none;"></div>
@@ -227,13 +241,47 @@
     </div>
 
     <script>
-        function addAudioElement(audioSrc, container) {
-            if (audioSrc && audioSrc.length > 0) {
-                const audioElement = document.createElement('audio');
-                audioElement.controls = true;
-                audioElement.src = audioSrc;
-                container.insertBefore(audioElement, container.firstChild);
+        function addAudioElement(audioSrc, container, options = {}) {
+            if (!audioSrc || audioSrc.length === 0) {
+                return null;
             }
+
+            const audioElement = document.createElement('audio');
+            audioElement.controls = true;
+            audioElement.src = audioSrc;
+
+            // Set audio segment timing if provided
+            const startTime = options.start || 0;
+            const endTime = options.end || 0;
+
+            // Store timing information as private properties
+            audioElement._audioStart = startTime;
+            audioElement._audioEnd = endTime;
+
+            // Set initial time if start time is specified
+            if (startTime > 0) {
+                audioElement.currentTime = startTime;
+            }
+
+            // Add event listener for automatic stop at end time
+            if (endTime > 0) {
+                audioElement.addEventListener('timeupdate', function () {
+                    if (this.currentTime >= endTime) {
+                        this.pause();
+                        this.currentTime = startTime; // Reset to start time
+                    }
+                });
+            }
+
+            // Reset to start time when audio ends
+            audioElement.addEventListener('ended', function () {
+                if (startTime > 0) {
+                    this.currentTime = startTime;
+                }
+            });
+
+            container.insertBefore(audioElement, container.firstChild);
+            return audioElement;
         }
         const articleId = new URLSearchParams(window.location.search).get('id');
         let currentAudio = null;
@@ -250,6 +298,12 @@
                     throw new Error('Article pages not defined');
                 }
                 document.getElementById('article-title').textContent = article.title;
+
+                // Show edit button and set up navigation
+                const editButton = document.getElementById('edit-button');
+                editButton.style.display = 'block';
+                editButton.href = `/edit?id=${articleId}`;
+
                 displayArticle(article);
                 console.log('Article loaded:', article);
             } catch (error) {
@@ -273,8 +327,11 @@
                 hornIcon.classList.add('icon');
                 hornIcon.innerHTML = '&#x1F50A;'; // Unicode for speaker icon
 
-                const audio = document.createElement('audio');
-                audio.src = "/assets/" + sentenceData.audio_url;
+                // Create audio element using the refactored function
+                const audio = addAudioElement("/assets/" + sentenceData.audio_url, sentenceContainer, {
+                    start: sentenceData.audio_start || 0,
+                    end: sentenceData.audio_end || 0
+                });
 
                 sentenceContainer.appendChild(hornIcon);
                 sentenceContainer.appendChild(sentenceContent);
@@ -282,16 +339,20 @@
                 sentenceContainer.addEventListener('click', () => {
                     if (currentAudio && currentAudio !== audio) {
                         currentAudio.pause();
-                        currentAudio.currentTime = 0;
+                        currentAudio.currentTime = currentAudio._audioStart || 0;
                         currentSentence.classList.remove('playing');
                     }
                     if (currentAudio === audio && !audio.paused) {
                         audio.pause();
-                        audio.currentTime = 0;
+                        audio.currentTime = audio._audioStart || 0;
                         sentenceContainer.classList.remove('playing');
                         currentAudio = null;
                         currentSentence = null;
                     } else {
+                        // Set start time if audio segment is defined
+                        if (audio._audioStart > 0) {
+                            audio.currentTime = audio._audioStart;
+                        }
                         audio.play();
                         sentenceContainer.classList.add('playing');
                         currentAudio = audio;
@@ -299,6 +360,7 @@
                     }
                 });
 
+                // Handle audio end
                 audio.addEventListener('ended', () => {
                     sentenceContainer.classList.remove('playing');
                     currentAudio = null;
