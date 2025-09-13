@@ -101,23 +101,24 @@
         }
 
         .sentence {
-            margin-bottom: 2px;
-            /* Further reduced margin */
-            padding: 0px 2px;
-            /* Further reduced padding */
+            margin-bottom: 10px;
+            /* Increased margin for better spacing */
+            padding: 8px;
+            /* Increased padding */
             border-radius: 5px;
             background-color: #f9f9f9;
             cursor: pointer;
             position: relative;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
         }
 
         .content-box .sentence {
-            margin-bottom: 2px;
-            /* Further reduced margin */
-            padding: 0px 2px;
-            /* Further reduced padding */
+            margin-bottom: 10px;
+            /* Increased margin for better spacing */
+            padding: 8px;
+            /* Increased padding */
             background-color: #f9f9f9;
             /* Keep the background color for better readability */
             border-radius: 5px;
@@ -125,7 +126,8 @@
             cursor: pointer;
             position: relative;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
         }
 
         .sentence.text-only {
@@ -135,7 +137,7 @@
         }
 
         .sentence .icon {
-            margin-right: 5px;
+            margin-bottom: 5px;
             font-size: 1em;
             /* Reduced size of icon */
         }
@@ -247,7 +249,7 @@
             }
 
             const audioElement = document.createElement('audio');
-            audioElement.controls = true;
+            audioElement.controls = false; // Disable default controls
             audioElement.src = audioSrc;
 
             // Set audio segment timing if provided
@@ -258,17 +260,19 @@
             audioElement._audioStart = startTime;
             audioElement._audioEnd = endTime;
 
-            // Set initial time if start time is specified
-            if (startTime > 0) {
-                audioElement.currentTime = startTime;
-            }
+            // Don't set initial time here - let it start from 0
+            // The start time will be set when user clicks play
 
             // Add event listener for automatic stop at end time
             if (endTime > 0) {
+                console.log(`Audio segment: ${startTime}s to ${endTime}s`);
                 audioElement.addEventListener('timeupdate', function () {
                     if (this.currentTime >= endTime) {
+                        console.log(`Audio stopped at ${this.currentTime}s (end: ${endTime}s)`);
                         this.pause();
                         this.currentTime = startTime; // Reset to start time
+                        // Trigger ended event to clean up UI
+                        this.dispatchEvent(new Event('ended'));
                     }
                 });
             }
@@ -280,7 +284,58 @@
                 }
             });
 
-            container.insertBefore(audioElement, container.firstChild);
+            // Create custom controls
+            const controlsContainer = document.createElement('div');
+            controlsContainer.style.display = 'flex';
+            controlsContainer.style.alignItems = 'center';
+            controlsContainer.style.gap = '10px';
+            controlsContainer.style.marginTop = '5px';
+
+            // Play/Pause button
+            const playButton = document.createElement('button');
+            playButton.innerHTML = '▶️';
+            playButton.style.background = 'none';
+            playButton.style.border = 'none';
+            playButton.style.fontSize = '16px';
+            playButton.style.cursor = 'pointer';
+
+            // Time display
+            const timeDisplay = document.createElement('span');
+            timeDisplay.style.fontSize = '14px';
+            timeDisplay.style.color = '#666';
+
+            // Update time display
+            const updateTimeDisplay = () => {
+                const start = startTime || 0;
+                const total = endTime > 0 ? Math.floor(endTime) : Math.floor(audioElement.duration || 0);
+
+                // Format time as MM:SS
+                const formatTime = (seconds) => {
+                    const mins = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    return `${mins}:${secs.toString().padStart(2, '0')}`;
+                };
+
+                timeDisplay.textContent = `${formatTime(start)}-${formatTime(total)}`;
+            };
+
+            // Listen for time updates
+            audioElement.addEventListener('timeupdate', updateTimeDisplay);
+            audioElement.addEventListener('loadedmetadata', updateTimeDisplay);
+
+            // Listen for play/pause events
+            audioElement.addEventListener('play', () => {
+                playButton.innerHTML = '⏸️';
+            });
+            audioElement.addEventListener('pause', () => {
+                playButton.innerHTML = '▶️';
+            });
+
+            controlsContainer.appendChild(playButton);
+            controlsContainer.appendChild(timeDisplay);
+
+            container.appendChild(audioElement);
+            container.appendChild(controlsContainer);
             return audioElement;
         }
         const articleId = new URLSearchParams(window.location.search).get('id');
@@ -311,7 +366,7 @@
             }
         }
 
-        function createSentenceElement(sentenceData, isTextOnly = false) {
+        function createSentenceElement(sentenceData, isTextOnly = false, fullAudioUrl = null) {
             const sentenceContainer = document.createElement('div');
             sentenceContainer.classList.add('sentence');
             if (isTextOnly) {
@@ -322,38 +377,49 @@
             sentenceContent.classList.add('content');
             sentenceContent.textContent = sentenceData.content;
 
-            if (!isTextOnly && sentenceData.audio_url) {
-                const hornIcon = document.createElement('span');
-                hornIcon.classList.add('icon');
-                hornIcon.innerHTML = '&#x1F50A;'; // Unicode for speaker icon
+            // Use sentence audio_url if available, otherwise fallback to full_audio
+            const audioUrl = sentenceData.audio_url || fullAudioUrl;
 
-                // Create audio element using the refactored function
-                const audio = addAudioElement("/assets/" + sentenceData.audio_url, sentenceContainer, {
+            if (!isTextOnly && audioUrl) {
+                sentenceContainer.appendChild(sentenceContent);
+
+                // Always create a new audio element for each sentence
+                // This ensures each sentence has its own time display
+                const audio = addAudioElement("/assets/" + audioUrl, sentenceContainer, {
                     start: sentenceData.audio_start || 0,
                     end: sentenceData.audio_end || 0
                 });
 
-                sentenceContainer.appendChild(hornIcon);
-                sentenceContainer.appendChild(sentenceContent);
-
                 sentenceContainer.addEventListener('click', () => {
-                    if (currentAudio && currentAudio !== audio) {
-                        currentAudio.pause();
-                        currentAudio.currentTime = currentAudio._audioStart || 0;
-                        currentSentence.classList.remove('playing');
-                    }
-                    if (currentAudio === audio && !audio.paused) {
+                    const isPlayingThis = currentAudio === audio && !audio.paused;
+
+                    if (isPlayingThis) {
+                        // Currently playing this one, so pause it and reset.
                         audio.pause();
                         audio.currentTime = audio._audioStart || 0;
                         sentenceContainer.classList.remove('playing');
                         currentAudio = null;
                         currentSentence = null;
                     } else {
+                        // Not playing this one. So, stop any other and play this one.
+                        if (currentAudio) {
+                            // Another audio is playing or paused. Stop it and reset.
+                            currentAudio.pause();
+                            currentAudio.currentTime = currentAudio._audioStart || 0;
+                            currentSentence.classList.remove('playing');
+                        }
+
+                        // Now play this one.
                         // Set start time if audio segment is defined
                         if (audio._audioStart > 0) {
                             audio.currentTime = audio._audioStart;
                         }
-                        audio.play();
+                        // Use a small delay to ensure currentTime is set before playing
+                        setTimeout(() => {
+                            audio.play().catch(error => {
+                                console.error('Error playing audio:', error);
+                            });
+                        }, 10);
                         sentenceContainer.classList.add('playing');
                         currentAudio = audio;
                         currentSentence = sentenceContainer;
@@ -398,10 +464,10 @@
 
                 if (page.sentences) {
                     page.sentences.forEach(sentenceData => {
-                        const sentenceElementPage = createSentenceElement(sentenceData, false);
+                        const sentenceElementPage = createSentenceElement(sentenceData, false, article.full_audio);
                         contentContainer.appendChild(sentenceElementPage);
 
-                        const sentenceElementFull = createSentenceElement(sentenceData, false);
+                        const sentenceElementFull = createSentenceElement(sentenceData, false, article.full_audio);
                         fullTextBox.appendChild(sentenceElementFull);
                     });
                 }
