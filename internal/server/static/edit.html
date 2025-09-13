@@ -320,6 +320,7 @@
 			cursor: not-allowed;
 			transform: none;
 			box-shadow: none;
+			opacity: 0.6;
 		}
 
 		.loading {
@@ -522,6 +523,14 @@
 		}
 
 		function createSentenceElement(sentence, index) {
+			// Convert old format to new format if needed
+			let timingValue = sentence.audio_timing || '';
+			if (!timingValue && sentence.audio_start && sentence.audio_end) {
+				timingValue = `${sentence.audio_start}, ${sentence.audio_end}`;
+			} else if (!timingValue && sentence.audio_start) {
+				timingValue = sentence.audio_start;
+			}
+
 			const div = document.createElement('div');
 			div.className = 'sentence-item';
 			div.innerHTML = `
@@ -541,12 +550,8 @@
                 </div>
                 <div class="sentence-timing">
                     <div class="timing-input">
-                        <label>Start (s):</label>
-                        <input type="number" step="0.1" value="${sentence.audio_start || ''}" onchange="updateSentence(this)">
-                    </div>
-                    <div class="timing-input">
-                        <label>End (s):</label>
-                        <input type="number" step="0.1" value="${sentence.audio_end || ''}" onchange="updateSentence(this)">
+                        <label>Timing (s):</label>
+                        <input type="text" placeholder="e.g., 28, 32" value="${timingValue}" onchange="updateSentence(this)">
                     </div>
                 </div>
                 <div class="sentence-audio">
@@ -555,8 +560,7 @@
                             <source src="/assets/${sentence.audio_url}" type="audio/mpeg">
                         </audio>
                         <div class="audio-info">
-                            ${sentence.audio_start ? `Start: ${sentence.audio_start}s` : ''}
-                            ${sentence.audio_end ? `End: ${sentence.audio_end}s` : ''}
+                            ${timingValue ? `Timing: ${timingValue}s` : 'No timing available'}
                         </div>
                     ` : '<span class="audio-info">No audio available</span>'}
                 </div>
@@ -570,12 +574,27 @@
 
 			// Update the sentence data
 			const textareas = sentenceItem.querySelectorAll('textarea');
-			const inputs = sentenceItem.querySelectorAll('input[type="number"]');
+			const timingInput = sentenceItem.querySelector('input[type="text"]');
 
 			bookData.pages[currentPageIndex].sentences[sentenceIndex].content = textareas[0].value;
 			bookData.pages[currentPageIndex].sentences[sentenceIndex].translate = textareas[1].value;
-			bookData.pages[currentPageIndex].sentences[sentenceIndex].audio_start = parseFloat(inputs[0].value) || 0;
-			bookData.pages[currentPageIndex].sentences[sentenceIndex].audio_end = parseFloat(inputs[1].value) || 0;
+
+			// Parse timing string and set both new and old fields
+			const timingValue = timingInput.value;
+			bookData.pages[currentPageIndex].sentences[sentenceIndex].audio_timing = timingValue;
+
+			// Parse timing string to extract start and end values
+			if (timingValue && timingValue.includes(',')) {
+				const parts = timingValue.split(',').map(p => p.trim());
+				bookData.pages[currentPageIndex].sentences[sentenceIndex].audio_start = parseFloat(parts[0]) || 0;
+				bookData.pages[currentPageIndex].sentences[sentenceIndex].audio_end = parseFloat(parts[1]) || 0;
+			} else if (timingValue) {
+				bookData.pages[currentPageIndex].sentences[sentenceIndex].audio_start = parseFloat(timingValue) || 0;
+				bookData.pages[currentPageIndex].sentences[sentenceIndex].audio_end = parseFloat(timingValue) || 0;
+			} else {
+				bookData.pages[currentPageIndex].sentences[sentenceIndex].audio_start = 0;
+				bookData.pages[currentPageIndex].sentences[sentenceIndex].audio_end = 0;
+			}
 
 			// Mark as having changes
 			hasUnsavedChanges = true;
@@ -610,6 +629,7 @@
 			const newSentence = {
 				content: '',
 				translate: '',
+				audio_timing: '',
 				audio_start: 0,
 				audio_end: 0,
 				audio_url: ''
@@ -685,8 +705,10 @@
 			const saveBtn = document.getElementById('save-all-btn');
 			if (hasUnsavedChanges) {
 				saveBtn.style.display = 'block';
+				saveBtn.disabled = false;
 			} else {
-				saveBtn.style.display = 'none';
+				saveBtn.style.display = 'block';
+				saveBtn.disabled = true;
 			}
 		}
 
